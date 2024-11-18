@@ -64,13 +64,12 @@ impl MouseButtonEvent for MouseButtonPressedEvent {
 }
 
 impl Event for MouseButtonPressedEvent {
+    fn get_event_type(&self) -> EventType { MouseButtonPressed }
+    fn get_name(&self) -> &str { "MouseButtonPressed" }
 
     fn get_category_flags(&self) -> EventCategory {
         EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton
     }
-    fn get_event_type(&self) -> EventType { MouseButtonPressed }
-
-    fn get_name(&self) -> &str { "MouseButtonPressed" }
 
     fn to_string(&self) -> String {
         format!("MouseButtonPressedEvent: {:?}", &self.button)
@@ -88,16 +87,16 @@ impl MouseButtonEvent for MouseButtonReleasedEvent {
 }
 
 impl Event for MouseButtonReleasedEvent {
-    fn get_category_flags(&self) -> EventCategory {
-        EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton
-    }
-
     fn get_event_type(&self) -> EventType {
         MouseButtonReleased
     }
 
     fn get_name(&self) -> &str {
         "MouseButtonReleased"
+    }
+
+    fn get_category_flags(&self) -> EventCategory {
+        EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton
     }
 
     fn to_string(&self) -> String {

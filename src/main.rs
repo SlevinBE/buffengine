@@ -1,3 +1,5 @@
+#![allow(dead_code,unused)]
+
 use std::error::Error;
 use buffengine::engine::application::Application;
 use buffengine::logger;

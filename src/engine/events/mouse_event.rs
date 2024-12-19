@@ -4,8 +4,8 @@ use crate::engine::events::event::{Event, EventCategory, EventType};
 use crate::engine::events::event::EventType::{MouseButtonReleased, MouseMoved, MouseScrolled};
 
 pub struct MouseMovedEvent {
-    pub x: f32,
-    pub y: f32
+    pub x: f64,
+    pub y: f64
 }
 
 impl Event for MouseMovedEvent {
@@ -25,8 +25,8 @@ impl Event for MouseMovedEvent {
 }
 
 pub struct MouseScrolledEvent {
-    pub x_offset: f32,
-    pub y_offset: f32
+    pub x_offset: f64,
+    pub y_offset: f64
 }
 
 impl Event for MouseScrolledEvent {

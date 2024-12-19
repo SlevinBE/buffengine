@@ -1,3 +1,6 @@
+use std::sync::mpsc::Receiver;
+use crate::engine::events::event::Event;
+
 pub trait Window {
     fn update(&mut self);
     
@@ -10,6 +13,8 @@ pub trait Window {
     fn is_vsync_enabled(&self) -> bool;
     
     fn is_closing(&self) -> bool;
+
+    fn events(&self) -> &Receiver<Box<dyn Event>>;
 }
 
 pub struct WindowProps {

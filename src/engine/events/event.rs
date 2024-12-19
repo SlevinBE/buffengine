@@ -2,7 +2,7 @@ use std::any::TypeId;
 use std::marker::PhantomData;
 use bitmask_enum::bitmask;
 
-#[derive(Hash, PartialEq, Eq)]
+#[derive(Hash, PartialEq, Eq, Debug)]
 pub enum EventType {
     WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
     AppTick, AppUpdate, AppRender,

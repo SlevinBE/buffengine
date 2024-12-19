@@ -1,3 +1,4 @@
+#[repr(i32)]
 #[derive(Debug)]
 pub enum KeyCode {
     Space               = 32,

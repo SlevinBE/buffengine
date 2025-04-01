@@ -4,7 +4,7 @@ use crate::engine::core::layer::Layer;
 use crate::engine::core::layerstack::LayerStack;
 use crate::engine::core::window::{Window, WindowProps};
 use crate::engine::events::event::EventType;
-use crate::platform::windows_window::WindowsWindow;
+use crate::platform::windows_window::UniversalWindow;
 
 pub struct Application {
     window: Box<dyn Window>,

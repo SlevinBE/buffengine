@@ -6,14 +6,24 @@ use crate::engine::events::event::Event;
 use crate::engine::events::event::EventType::WindowClose;
 use crate::engine::events::key_event::{KeyPressedEvent, KeyReleasedEvent};
 use crate::engine::events::mouse_event::{MouseButtonPressedEvent, MouseButtonReleasedEvent, MouseMovedEvent, MouseScrolledEvent};
-use glfw::{Action, Context, Glfw, GlfwReceiver, Key, MouseButton, SwapInterval, WindowEvent, WindowMode};
+use crate::engine::renderer::{Renderer, WgpuRenderer};
+use crate::platform::input::WinitKeyCode;
 use log::debug;
 use std::sync::mpsc::{channel, Receiver, Sender};
+use winit::application::ApplicationHandler;
+use winit::dpi::LogicalSize;
+use winit::event::MouseScrollDelta::{LineDelta, PixelDelta};
+use winit::event::{ElementState, MouseButton, WindowEvent};
+use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+use winit::keyboard::PhysicalKey;
+use winit::keyboard::PhysicalKey::Code;
+use winit::keyboard::PhysicalKey::Unidentified;
+use winit::window::WindowId;
 
-pub struct WindowsWindow {
-    glfw: Glfw,
-    window_handle: glfw::PWindow,
-    glfw_events: GlfwReceiver<(f64, WindowEvent)>,
+type WinitWindow = winit::window::Window;
+
+pub struct UniversalWindow<'window> {
+    renderer: Option<WgpuRenderer<'window>>,
     events_sender: Sender<Box<dyn Event>>,
     events_receiver: Receiver<Box<dyn Event>>,
     window_data: WindowData
@@ -26,29 +36,15 @@ struct WindowData {
     vsync: bool
 }
 
-impl WindowsWindow {
-    pub fn new(window_props: &WindowProps) -> WindowsWindow {
-        let mut glfw = glfw::init(glfw::fail_on_errors).unwrap();
-
-        let (mut window, receiver) = glfw.create_window(
-            window_props.width, window_props.height, &window_props.title, WindowMode::Windowed
-        ).expect("Failed to create GLFW window.");
-
-        window.set_framebuffer_size_polling(true);
-        window.set_size_polling(true);
-        window.set_key_polling(true);
-        window.set_mouse_button_polling(true);
-        window.set_cursor_pos_polling(true);
-        window.set_close_polling(true);
-        window.set_scroll_polling(true);
-        window.make_current();
+impl <'window> UniversalWindow<'window> {
+    pub fn new(window_props: WindowProps) -> UniversalWindow<'window> {
+        let event_loop = EventLoop::new().unwrap();
+        event_loop.set_control_flow(ControlFlow::Poll);
 
         let (events_sender, events_receiver) = channel();
         
-        WindowsWindow {
-            glfw,
-            window_handle: window,
-            glfw_events: receiver,
+        let mut windows_window = UniversalWindow {
+            renderer: None,
             events_sender,
             events_receiver,
             window_data: WindowData {
@@ -57,83 +53,79 @@ impl WindowsWindow {
                 height: window_props.height,
                 vsync: false
             }   
-        }
+        };
+
+        event_loop.run_app(&mut windows_window);
+        windows_window
     }
 
-    fn process_events(&mut self) {
-        self.glfw.poll_events();
-
-        while let Some((_, window_event)) = self.glfw_events.receive() {
-            if let Some(event) = self.map_event(window_event) {
-                self.events_sender.send(event);
-            }
-        }
-    }
-
-    fn map_event(&self, window_event: WindowEvent) -> Option<Box<dyn Event>> {
-        match window_event {
-            WindowEvent::Close => Some(Box::new(WindowCloseEvent{})),
-            WindowEvent::Size(width, height) => {
-                Some(Box::new(WindowResizeEvent{
-                    width: width as u32,
-                    height: height as u32
+    fn map_event(&mut self, event: WindowEvent) -> Option<Box<dyn Event>> {
+        match event {
+            WindowEvent::CloseRequested => {
+                Some(Box::new(WindowCloseEvent {}))
+            },
+            WindowEvent::Resized(physical_size) => {
+                Some(Box::new(WindowResizeEvent {
+                    width: physical_size.width,
+                    height: physical_size.height
                 }))
             }
-            WindowEvent::FramebufferSize(width, height) => {
-                Some(Box::new(WindowResizeEvent{
-                    width: width as u32,
-                    height: height as u32
-                }))
-            }
-            WindowEvent::Key(key, scancode, action, modifiers) => {
-                match key.try_into() {
-                    Err(_) => {
-                        log::warn!("unable to map key code: {:?}", key);
+            WindowEvent::KeyboardInput { device_id, event, .. } => {
+                let key_result = match event.physical_key {
+                    Code(key_code) => (key_code as WinitKeyCode).try_into(),
+                    Unidentified(native_key_code) =>
+                        Err(format!("unidentified key code: {:?}", native_key_code))
+                };
+
+                match key_result {
+                    Err(message) => {
+                        log::warn!("{}", message);
                         None
                     }
                     Ok(key_code) => {
-                        match action {
-                            Action::Press => {
+                        match event.state {
+                            ElementState::Pressed => {
                                 Some(Box::new(KeyPressedEvent {
                                     key_code,
-                                    is_repeat: false,
+                                    is_repeat: event.repeat,
                                 }))
                             }
-                            Action::Release => {
+                            ElementState::Released => {
                                 Some(Box::new(KeyReleasedEvent {
                                     key_code
-                                }))
-                            }
-                            Action::Repeat => {
-                                Some(Box::new(KeyPressedEvent {
-                                    key_code,
-                                    is_repeat: true,
                                 }))
                             }
                         }
                     }
                 }
             }
-            WindowEvent::CursorPos(x_pos, y_pos) => {
-                Some(Box::new(MouseMovedEvent{
-                    x: x_pos,
-                    y: y_pos
+            WindowEvent::CursorMoved { device_id, position } => {
+                Some(Box::new(MouseMovedEvent {
+                    x: position.x,
+                    y: position.y
                 }))
             }
-            WindowEvent::MouseButton(button, action, modifiers) => {
-                let mouse_code: MouseCode = button.into();
-
-                match action {
-                    Action::Press => Some(Box::new(MouseButtonPressedEvent{ button: mouse_code })),
-                    Action::Release => Some(Box::new(MouseButtonReleasedEvent{ button: mouse_code })),
-                    _ => None
+            WindowEvent::MouseInput { device_id, state, button } => {
+                button.try_into().map_or(None, |mouse_code|
+                    match state {
+                        ElementState::Pressed => Some(Box::new(MouseButtonPressedEvent { button: mouse_code })),
+                        ElementState::Released => Some(Box::new(MouseButtonReleasedEvent { button: mouse_code })),
+                        _ => None
+                    }
+                )
+            }
+            WindowEvent::MouseWheel { device_id, delta, phase } => {
+                match delta {
+                    LineDelta(x, y) => None,
+                    PixelDelta(position) => Some(Box::new(MouseScrolledEvent {
+                        x_offset: position.x,
+                        y_offset: position.y
+                    }))
                 }
             }
-            WindowEvent::Scroll(x_offset, y_offset) => {
-                Some(Box::new(MouseScrolledEvent{
-                    x_offset,
-                    y_offset
-                }))
+            WindowEvent::RedrawRequested => {
+                self.update();
+                None
             }
             (unknown_event) => {
                 debug!("Unknown event {:?}", unknown_event);
@@ -143,10 +135,30 @@ impl WindowsWindow {
     }
 }
 
-impl Window for WindowsWindow {
+impl ApplicationHandler for UniversalWindow<'_> {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        let window_attributes = WinitWindow::default_attributes()
+            .with_title(&self.window_data.title)
+            .with_inner_size(LogicalSize::new(self.window_data.width, self.window_data.height));
+        let window: WinitWindow = event_loop.create_window(window_attributes).unwrap();
+        self.renderer = Some(WgpuRenderer::new(window));
+    }
+
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
+        if let Some(event) = Self::map_event(self, event) {
+            if event.get_event_type() == WindowClose {
+                event_loop.exit();
+            }
+            self.events_sender.send(event);
+        }
+    }
+}
+
+impl <'window> Window for UniversalWindow<'window> {
     fn update(&mut self) {
-        self.process_events();
-        self.window_handle.swap_buffers();
+        if let Some(renderer) = &self.renderer {
+            renderer.draw();
+        }
     }
 
     fn get_width(&self) -> u32 {
@@ -158,49 +170,16 @@ impl Window for WindowsWindow {
     }
 
     fn set_vsync(&mut self, enabled: bool) {
-        if enabled {
-            self.glfw.set_swap_interval(SwapInterval::Sync(1));
-        } else {
-            self.glfw.set_swap_interval(SwapInterval::None);
-        }
-        
+        // TODO: implement vsync
         self.window_data.vsync = enabled;
     }
 
     fn is_vsync_enabled(&self) -> bool {
         self.window_data.vsync
     }
-    
-    fn is_closing(&self) -> bool {
-        self.window_handle.should_close()
-    }
 
     fn events(&self) -> &Receiver<Box<dyn Event>> {
         &self.events_receiver
     }
 
-}
-
-/// conversion between KeyCode and Key. Integer key codes should match on both ends.
-impl Into<KeyCode> for Key {
-    fn into(self) -> KeyCode {
-        unsafe {
-            std::mem::transmute(self)
-        }
-    }
-}
-
-impl Into<MouseCode> for MouseButton {
-    fn into(self) -> MouseCode {
-        match self {
-            MouseButton::Button1 => MouseCode::Button0,
-            MouseButton::Button2 => MouseCode::Button1,
-            MouseButton::Button3 => MouseCode::Button2,
-            MouseButton::Button4 => MouseCode::Button3,
-            MouseButton::Button5 => MouseCode::Button4,
-            MouseButton::Button6 => MouseCode::Button5,
-            MouseButton::Button7 => MouseCode::Button6,
-            MouseButton::Button8 => MouseCode::Button7,
-        }
-    }
 }

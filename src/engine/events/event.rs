@@ -75,7 +75,7 @@ mod tests {
     fn event_dispatcher_should_dispatch_event_to_registered_handlers() {
         // given
         let mut event_dispatcher = EventDispatcher::<MouseButtonReleasedEvent>::new();
-        let event = MouseButtonReleasedEvent{ button: MouseCode::Button0 };
+        let event = MouseButtonReleasedEvent{ button: MouseCode::ButtonLeft };
         let event_handler = EventHandlerStub::new();
         event_dispatcher.add_event_handler(&event_handler);
 

@@ -4,7 +4,7 @@ use std::error::Error;
 use buffengine::engine::application::Application;
 use buffengine::engine::core::window::WindowProps;
 use buffengine::logger;
-use buffengine::platform::windows_window::WindowsWindow;
+use buffengine::platform::windows_window::UniversalWindow;
 use buffengine::sample_game::debug_overlay::DebugOverlay;
 use buffengine::sample_game::sample_layer::SampleLayer;
 use logger::init_logging;
@@ -19,7 +19,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         name: String::from("Debug Overlay")
     };
 
-    let window = Box::new(WindowsWindow::new(&WindowProps::default()));
+    let window_props = WindowProps::default();
+    let window = Box::new(UniversalWindow::new(window_props));
     let mut app = Application::new(window);
     app.push_layer(Box::new(sample_layer));
     app.push_overlay(Box::new(debug_overlay));

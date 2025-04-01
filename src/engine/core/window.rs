@@ -12,8 +12,6 @@ pub trait Window {
     
     fn is_vsync_enabled(&self) -> bool;
     
-    fn is_closing(&self) -> bool;
-
     fn events(&self) -> &Receiver<Box<dyn Event>>;
 }
 

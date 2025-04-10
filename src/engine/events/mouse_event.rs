@@ -1,7 +1,6 @@
-use EventType::MouseButtonPressed;
 use crate::engine::core::mouse_codes::MouseCode;
-use crate::engine::events::event::{Event, EventCategory, EventType};
-use crate::engine::events::event::EventType::{MouseButtonReleased, MouseMoved, MouseScrolled};
+use crate::engine::events::EventType::{MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled};
+use crate::engine::events::{Event, EventCategory, EventType};
 
 pub struct MouseMovedEvent {
     pub x: f64,

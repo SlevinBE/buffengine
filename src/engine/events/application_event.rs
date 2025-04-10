@@ -1,6 +1,5 @@
-use EventType::WindowClose;
-use crate::engine::events::event::{Event, EventCategory, EventType};
-use crate::engine::events::event::EventType::WindowResize;
+use crate::engine::events::EventType::{WindowClose, WindowResize};
+use crate::engine::events::{Event, EventCategory, EventType};
 
 pub struct WindowResizeEvent {
     pub width: u32,

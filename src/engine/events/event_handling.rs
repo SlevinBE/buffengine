@@ -1,40 +1,4 @@
-use std::any::TypeId;
-use std::marker::PhantomData;
-use bitmask_enum::bitmask;
-
-#[derive(Hash, PartialEq, Eq, Debug)]
-pub enum EventType {
-    WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
-    AppTick, AppUpdate, AppRender,
-    KeyPressed, KeyReleased, KeyTyped,
-    MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled
-}
-
-#[bitmask(u8)]
-pub enum EventCategory {
-    Application,
-    Input,
-    Keyboard,
-    Mouse,
-    MouseButton,
-}
-
-pub trait Event {
-    fn get_event_type(&self) -> EventType;
-
-    fn get_name(&self) -> &str;
-
-    fn get_category_flags(&self) -> EventCategory;
-
-    fn is_in_category(&self, category: EventCategory) -> bool {
-        self.get_category_flags().contains(category)
-    }
-
-    fn to_string(&self) -> String {
-        self.get_name().to_string()
-    }
-
-}
+use crate::engine::events::Event;
 
 trait EventHandler<T: Event> {
     fn handle(&self, event: &T);
@@ -65,11 +29,11 @@ impl<'a, U: Event> EventDispatcher<'a, U> {
 
 #[cfg(test)]
 mod tests {
-    use std::cell::Cell;
     use super::*;
     use crate::engine::core::mouse_codes::MouseCode;
-    use crate::engine::events::event::EventDispatcher;
+    use crate::engine::events::event_handling::EventDispatcher;
     use crate::engine::events::mouse_event::MouseButtonReleasedEvent;
+    use std::cell::Cell;
 
     #[test]
     fn event_dispatcher_should_dispatch_event_to_registered_handlers() {

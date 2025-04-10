@@ -1,5 +1,5 @@
+use crate::engine::events::Event;
 use std::sync::mpsc::Receiver;
-use crate::engine::events::event::Event;
 
 pub trait Window {
     fn update(&mut self);

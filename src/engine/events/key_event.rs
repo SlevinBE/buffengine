@@ -1,5 +1,5 @@
 use crate::engine::core::key_codes::KeyCode;
-use crate::engine::events::event::{Event, EventCategory, EventType};
+use crate::engine::events::{Event, EventCategory, EventType};
 
 pub trait KeyEvent : Event {
     fn get_key_code(&self) -> &KeyCode;
@@ -18,14 +18,14 @@ impl KeyEvent for KeyPressedEvent {
 }
 
 impl Event for KeyPressedEvent {
-    fn get_category_flags(&self) -> EventCategory {
-        EventCategory::Keyboard | EventCategory::Input
-    }
     fn get_event_type(&self) -> EventType {
         EventType::KeyPressed
     }
     fn get_name(&self) -> &str {
         "KeyPressed"
+    }
+    fn get_category_flags(&self) -> EventCategory {
+        EventCategory::Keyboard | EventCategory::Input
     }
     fn to_string(&self) -> String {
         format!("KeyPressedEvent: {:?}, {}", self.key_code, self.is_repeat)
@@ -43,13 +43,13 @@ impl KeyEvent for KeyReleasedEvent {
 }
 
 impl Event for KeyReleasedEvent {
-    fn get_category_flags(&self) -> EventCategory {
-        EventCategory::Keyboard | EventCategory::Input
-    }
     fn get_event_type(&self) -> EventType {
         EventType::KeyReleased
     }
     fn get_name(&self) -> &str {"KeyReleased"}
+    fn get_category_flags(&self) -> EventCategory {
+        EventCategory::Keyboard | EventCategory::Input
+    }
     fn to_string(&self) -> String {format!("KeyReleasedEvent: {:?}", self.key_code)}
 }
 
@@ -64,12 +64,12 @@ impl KeyEvent for KeyTypedEvent {
 }
 
 impl Event for KeyTypedEvent {
-    fn get_category_flags(&self) -> EventCategory {
-        EventCategory::Keyboard | EventCategory::Input
-    }
     fn get_event_type(&self) -> EventType {
         EventType::KeyTyped
     }
     fn get_name(&self) -> &str { "KeyTyped" }
+    fn get_category_flags(&self) -> EventCategory {
+        EventCategory::Keyboard | EventCategory::Input
+    }
     fn to_string(&self) -> String { format!("KeyTypedEvent: {:?}", self.key_code) }
 }

@@ -1,5 +1,5 @@
 use crate::engine::core::layer::Layer;
-use crate::engine::events::event::Event;
+use crate::engine::events::Event;
 
 pub struct SampleLayer {
     pub name: String
@@ -19,7 +19,7 @@ impl Layer for SampleLayer {
         println!("SampleLayer update");
     }
 
-    fn on_event(&self, event: &Box<dyn Event>) -> bool{
+    fn on_event(&self, event: &Box<dyn Event>) -> bool {
         println!("SampleLayer event: {:?}", event.get_event_type());
         false
     }

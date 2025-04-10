@@ -1,13 +1,13 @@
 #![allow(dead_code,unused)]
 
-use std::error::Error;
 use buffengine::engine::application::Application;
 use buffengine::engine::core::window::WindowProps;
 use buffengine::logger;
-use buffengine::platform::windows_window::UniversalWindow;
+use buffengine::platform::universal_window::UniversalWindow;
 use buffengine::sample_game::debug_overlay::DebugOverlay;
 use buffengine::sample_game::sample_layer::SampleLayer;
 use logger::init_logging;
+use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
     init_logging()?;

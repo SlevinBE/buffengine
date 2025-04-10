@@ -1,5 +1,5 @@
 use crate::engine::core::layer::Layer;
-use crate::engine::events::event::Event;
+use crate::engine::events::Event;
 
 pub struct DebugOverlay {
     pub name: String

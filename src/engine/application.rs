@@ -1,10 +1,10 @@
-use std::cell::{Cell, Ref, RefCell};
-use log::info;
 use crate::engine::core::layer::Layer;
 use crate::engine::core::layerstack::LayerStack;
 use crate::engine::core::window::{Window, WindowProps};
-use crate::engine::events::event::EventType;
-use crate::platform::windows_window::UniversalWindow;
+use crate::engine::events::EventType;
+use crate::platform::universal_window::UniversalWindow;
+use log::info;
+use std::cell::{Cell, Ref, RefCell};
 
 pub struct Application {
     window: Box<dyn Window>,

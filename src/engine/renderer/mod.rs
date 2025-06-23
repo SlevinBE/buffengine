@@ -5,7 +5,7 @@ use std::ops::Range;
 use wgpu::RenderPipeline;
 
 pub trait Renderer {
-    fn draw(&self);
+    fn draw_triangle(&self);
 }
 
 pub struct WgpuInfraPipeline<'window> {

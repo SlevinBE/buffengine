@@ -4,6 +4,8 @@ pub mod event_handling;
 pub mod mouse_event;
 pub mod application_event;
 pub mod key_event;
+pub mod winit_event_mapper;
+pub mod winit_input_mapper;
 
 pub trait Event {
     fn get_event_type(&self) -> EventType;

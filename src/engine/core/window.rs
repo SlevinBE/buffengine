@@ -4,13 +4,7 @@ use std::sync::mpsc::Receiver;
 pub trait Window {
     fn update(&mut self);
     
-    fn get_width(&self) -> u32;
-    
-    fn get_height(&self) -> u32;
-    
-    fn set_vsync(&mut self, enabled: bool);
-    
-    fn is_vsync_enabled(&self) -> bool;
+    fn get_window_props(&self) -> &WindowProps;
     
     fn events(&self) -> &Receiver<Box<dyn Event>>;
 }

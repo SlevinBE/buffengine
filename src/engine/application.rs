@@ -1,41 +1,49 @@
 use crate::engine::core::layer::Layer;
 use crate::engine::core::layerstack::LayerStack;
 use crate::engine::core::window::{Window, WindowProps};
-use crate::engine::events::EventType;
-use crate::platform::universal_window::UniversalWindow;
+use crate::engine::events::{Event, EventType};
 use log::info;
 use std::cell::{Cell, Ref, RefCell};
+use std::sync::mpsc::{channel, Receiver, Sender};
+use winit::application::ApplicationHandler;
+use winit::dpi::LogicalSize;
+use winit::event::WindowEvent;
+use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+use winit::window::WindowId;
+use crate::engine::events::EventType::WindowClose;
+use crate::engine::events::winit_event_mapper::map_event;
+use crate::engine::renderer::Renderer;
+use crate::engine::renderer::wgpu_renderer::WgpuRenderer;
 
-pub struct Application {
-    window: Box<dyn Window>,
-    is_running: Cell<bool>,
-    layerstack: LayerStack
+type WinitWindow = winit::window::Window;
+
+pub struct Application<'app> {
+    layerstack: LayerStack,
+    renderer: Option<WgpuRenderer<'app>>,
+    events_sender: Sender<Box<dyn Event>>,
+    events_receiver: Receiver<Box<dyn Event>>,
+    window_props: WindowProps
 }
 
-impl Application {
+impl <'app> Application<'app> {
     
-    pub fn new(window: Box<dyn Window>) -> Application {
+    pub fn new(window_props: WindowProps) -> Application<'app> {
+        let (events_sender, events_receiver) = channel();
         Self {
-            window,
-            is_running: Cell::new(true),
-            layerstack: LayerStack::new()
+            layerstack: LayerStack::new(),
+            renderer: None,
+            events_sender,
+            events_receiver,
+            window_props
         }
     }
     
     pub fn run(&mut self) {
         info!("Engine started");
-    
-        while self.is_running.get() {
-            for layer in self.layerstack.layers() {
-                layer.on_update()
-            }
-            for overlay in self.layerstack.overlays() {
-                overlay.on_update()
-            }
 
-            self.window.update();
-            self.process_events();
-        }
+        let event_loop = EventLoop::new().unwrap();
+        event_loop.set_control_flow(ControlFlow::Poll);
+        event_loop.run_app(self);
     }
 
     pub fn push_layer(&mut self, layer: Box<dyn Layer>) {
@@ -46,12 +54,13 @@ impl Application {
         self.layerstack.push_overlay(overlay);
     }
 
-    fn process_events(&mut self) {
-        while let Ok(event) = self.window.events().try_recv() {
+    fn process_events(&mut self, event_loop: &ActiveEventLoop) {
+        while let Ok(event) = self.events_receiver.try_recv() {
             info!("Event: {:?}", event.get_event_type());
             
             match event.get_event_type() {
-                EventType::WindowClose => self.on_window_closed(),
+                EventType::WindowClose => self.on_window_closed(event_loop),
+                EventType::AppRender => self.on_app_render(),
                 _ => {
                     // ignore for now
                 }
@@ -71,7 +80,47 @@ impl Application {
         }
     }
 
-    fn on_window_closed(&self) {
-        self.is_running.set(false);
+    fn update_layers(&mut self) {
+        for layer in self.layerstack.layers() {
+            layer.on_update()
+        }
+        for overlay in self.layerstack.overlays() {
+            overlay.on_update()
+        }
+    }
+
+    fn run_renderer(&mut self) {
+        if let Some(renderer) = &self.renderer {
+            renderer.draw_triangle();
+        }
+    }
+    
+    fn on_app_render(&mut self) {
+        self.update_layers();
+        self.run_renderer();
+    }
+
+    fn on_window_closed(&self, event_loop: &ActiveEventLoop) {
+        event_loop.exit();
+    }
+}
+
+impl <'app> ApplicationHandler for Application<'app> {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        let window_attributes = WinitWindow::default_attributes()
+            .with_title(&self.window_props.title)
+            .with_inner_size(LogicalSize::new(
+                self.window_props.width, 
+                self.window_props.height
+            ));
+        let window: WinitWindow = event_loop.create_window(window_attributes).unwrap();
+        self.renderer = Some(WgpuRenderer::new(window));
+    }
+
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
+        if let Some(event) = map_event(event) {
+            self.events_sender.send(event);
+            self.process_events(event_loop);
+        }
     }
 }

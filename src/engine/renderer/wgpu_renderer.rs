@@ -21,8 +21,7 @@ impl <'window> WgpuRenderer<'window> {
                 force_fallback_adapter: false,
                 compatible_surface: Some(&surface),
             })
-        )
-            .unwrap();
+        ).unwrap();
         let (device, queue) = pollster::block_on(
             adapter.request_device(&wgpu::DeviceDescriptor::default(), None)
         )
@@ -44,7 +43,7 @@ impl <'window> WgpuRenderer<'window> {
 
 impl <'window> Renderer for WgpuRenderer<'window> {
 
-    fn draw(&self) {
+    fn draw_triangle(&self) {
         let triangle_definition = TriangleDefinition::new();
         let pipeline = triangle_definition.create_render_pipeline(&self.infra);
 

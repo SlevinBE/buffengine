@@ -1,11 +1,36 @@
-mod triangle;
 pub mod wgpu_renderer;
 
 use std::ops::Range;
 use wgpu::RenderPipeline;
 
 pub trait Renderer {
-    fn draw_triangle(&self);
+    fn render(&self, renderables: Vec<&Renderable>);
+}
+
+pub struct Renderable {
+    pub mesh: Mesh,
+    pub material: Material
+}
+
+pub struct Mesh {
+    pub vertices: Vec<Vertex>
+}
+
+#[repr(C)]  // Guarantees consistent memory layout across platforms
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct Vertex {
+    pub position: [f32; 3]
+}
+
+pub struct Material {
+    pub shader: ShaderDefinition
+    
+    // TODO: add texture support
+}
+
+pub struct ShaderDefinition {
+    pub name: String,
+    pub source: String
 }
 
 pub struct WgpuInfraPipeline<'window> {

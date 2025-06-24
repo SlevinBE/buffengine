@@ -4,16 +4,14 @@ use buffengine::engine::application::Application;
 use buffengine::engine::core::window::WindowProps;
 use buffengine::logger;
 use buffengine::sample_game::debug_overlay::DebugOverlay;
-use buffengine::sample_game::sample_layer::SampleLayer;
+use buffengine::sample_game::scene_layer::SceneLayer;
 use logger::init_logging;
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
     init_logging()?;
 
-    let sample_layer = SampleLayer {
-        name: String::from("Sample Layer")
-    };
+    let sample_layer = SceneLayer::new(String::from("Sample Layer"));
     let debug_overlay = DebugOverlay {
         name: String::from("Debug Overlay")
     };

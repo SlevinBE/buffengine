@@ -10,6 +10,7 @@ use winit::dpi::LogicalSize;
 use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::WindowId;
+use crate::engine::core::scene::Scene;
 use crate::engine::events::EventType::WindowClose;
 use crate::engine::events::winit_event_mapper::map_event;
 use crate::engine::renderer::Renderer;
@@ -91,10 +92,26 @@ impl <'app> Application<'app> {
 
     fn run_renderer(&mut self) {
         if let Some(renderer) = &self.renderer {
-            renderer.draw_triangle();
+            for layer in self.layerstack.layers() {
+                if let Some(scene) = layer.as_scene() {
+                    Self::render_scene(renderer, scene);
+                }
+            }
+            for overlay in self.layerstack.overlays() {
+                if let Some(scene) = overlay.as_scene() {
+                    Self::render_scene(renderer, scene);
+                }
+            }
         }
     }
-    
+
+    fn render_scene(renderer: &WgpuRenderer, scene: &dyn Scene) {
+        let renderables = scene.get_game_objects().iter().map(|go| {
+            go.get_renderable()
+        }).collect::<Vec<_>>();
+        renderer.render(renderables)
+    }
+
     fn on_app_render(&mut self) {
         self.update_layers();
         self.run_renderer();

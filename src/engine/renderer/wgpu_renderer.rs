@@ -1,8 +1,9 @@
-use crate::engine::renderer::triangle::TriangleDefinition;
-use crate::engine::renderer::{RenderedObject, Renderer, WgpuInfraPipeline};
+use crate::engine::renderer::{Mesh, Renderable, RenderedObject, Renderer, ShaderDefinition, Vertex, WgpuInfraPipeline};
 use std::iter::once;
-use wgpu::InstanceDescriptor;
+use bytemuck::cast_slice;
+use wgpu::{Buffer, BufferUsages, ColorTargetState, FragmentState, InstanceDescriptor, RenderPass, RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderModuleDescriptor, ShaderSource, TextureFormat, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode};
 use wgpu::StoreOp::Store;
+use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::window::Window;
 
 pub struct WgpuRenderer<'window> {
@@ -39,14 +40,75 @@ impl <'window> WgpuRenderer<'window> {
             }
         }
     }
+
+    fn render_object(&self, renderable: &Renderable, render_pass: &mut RenderPass) {
+        let shader_module = self.create_shader(&renderable.material.shader);
+        let pipeline = self.create_pipeline(shader_module);
+        let vertex_buffer = self.create_vertex_buffer(&renderable.mesh);
+        render_pass.set_pipeline(&pipeline);
+        render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
+        render_pass.draw(0..renderable.mesh.vertices.len() as u32, 0..1);
+    }
+    
+    fn create_shader(&self, shader_definition: &ShaderDefinition) -> ShaderModule {
+        self.infra.device.create_shader_module(ShaderModuleDescriptor {
+            label: Some(shader_definition.name.as_str()),
+            source: ShaderSource::Wgsl(shader_definition.source.clone().into()),
+        })
+    }
+    
+    fn create_pipeline(&self, shader_module: ShaderModule) -> RenderPipeline {
+        let preferred_format: TextureFormat = self.infra.surface.get_capabilities(&self.infra.adapter).formats[0];
+        self.infra.device.create_render_pipeline(&RenderPipelineDescriptor {
+            label: Some("Pipeline"),
+            layout: None,
+            vertex: VertexState {
+                module: &shader_module,
+                entry_point: None,
+                compilation_options: Default::default(),
+                buffers: &[VertexBufferLayout {
+                    array_stride: size_of::<Vertex>() as wgpu::BufferAddress,
+                    step_mode: VertexStepMode::Vertex,
+                    attributes: &[
+                        VertexAttribute {
+                            shader_location: 0, // position
+                            format: VertexFormat::Float32x3,
+                            offset: 0,
+                        }
+                    ]
+                }
+                ],
+            },
+            fragment: Some(FragmentState {
+                module: &shader_module,
+                entry_point: None,
+                compilation_options: Default::default(),
+                targets: &[Some(ColorTargetState {
+                    format: preferred_format,
+                    blend: None,
+                    write_mask: Default::default(),
+                })]
+            }),
+            primitive: Default::default(),
+            depth_stencil: None,
+            multisample: Default::default(),
+            multiview: None,
+            cache: None,
+        })
+    }
+
+    fn create_vertex_buffer(&self, mesh: &Mesh) -> Buffer {
+        self.infra.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: cast_slice(mesh.vertices.as_slice()),
+            usage: BufferUsages::VERTEX
+        })
+    }
 }
 
 impl <'window> Renderer for WgpuRenderer<'window> {
-
-    fn draw_triangle(&self) {
-        let triangle_definition = TriangleDefinition::new();
-        let pipeline = triangle_definition.create_render_pipeline(&self.infra);
-
+    
+    fn render(&self, renderables: Vec<&Renderable>) {
         let frame = self.infra.surface
             .get_current_texture()
             .expect("Failed to acquire next swap chain texture");
@@ -72,6 +134,7 @@ impl <'window> Renderer for WgpuRenderer<'window> {
             timestamp_writes: None,
             occlusion_query_set: None
         };
+
         let mut encoder =
             self.infra.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
@@ -79,11 +142,14 @@ impl <'window> Renderer for WgpuRenderer<'window> {
 
         {
             let mut render_pass = encoder.begin_render_pass(&render_pass_desc);
-            render_pass.set_pipeline(&pipeline);
-            render_pass.draw(triangle_definition.vertices(), 0..1);
+            
+            for renderable in renderables {
+                self.render_object(renderable, &mut render_pass);    
+            }
         }
 
         self.infra.queue.submit(once(encoder.finish()));
         frame.present();
     }
+
 }

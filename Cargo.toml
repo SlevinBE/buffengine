@@ -11,4 +11,4 @@ bitmask-enum = "2.2.4"
 winit = "0.30.8"
 wgpu = "24.0.1"
 pollster = "0.4.0"
-bytemuck = "1.21.0"
+bytemuck = { version = "1.21.0", features = ["derive"] }

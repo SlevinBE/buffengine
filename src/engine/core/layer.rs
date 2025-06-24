@@ -1,4 +1,6 @@
+use crate::engine::core::scene::Scene;
 use crate::engine::events::Event;
+use crate::engine::gameobjects::GameObject;
 
 pub trait Layer {
     fn on_attach(&self);
@@ -17,4 +19,8 @@ pub trait Layer {
     /// * `bool` - Whether the event was handled.
     fn on_event(&self, event: &Box<dyn Event>) -> bool;
     fn get_name(&self) -> &str;
+    
+    fn as_scene(&self) -> Option<&dyn Scene> {
+        None
+    }
 }

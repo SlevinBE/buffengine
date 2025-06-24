@@ -1,3 +1,4 @@
+use log::debug;
 use crate::engine::core::layer::Layer;
 use crate::engine::core::scene::Scene;
 use crate::engine::events::Event;
@@ -22,21 +23,13 @@ impl SceneLayer {
 
 impl Layer for SceneLayer {
 
-    fn on_attach(&self) {
-        println!("SampleLayer attached");
+    fn update(&self) {
+        debug!("SampleLayer update");
     }
 
-    fn on_detach(&self) {
-        println!("SampleLayer detached");
-    }
-
-    fn on_update(&self) {
-        println!("SampleLayer update");
-    }
-
-    fn on_event(&self, event: &Box<dyn Event>) -> bool {
-        println!("SampleLayer event: {:?}", event.get_event_type());
-        false
+    fn handle_event(&self, event: &Box<dyn Event>) -> bool {
+        debug!("SampleLayer event: {:?}", event.get_event_type());
+        true
     }
 
     fn get_name(&self) -> &str {

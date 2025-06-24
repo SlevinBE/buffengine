@@ -1,3 +1,4 @@
+use log::debug;
 use crate::engine::core::layer::Layer;
 use crate::engine::events::Event;
 
@@ -6,20 +7,12 @@ pub struct DebugOverlay {
 }
 
 impl Layer for DebugOverlay {
-    fn on_attach(&self) {
-        println!("DebugOverlay attached");
+    fn update(&self) {
+        debug!("DebugOverlay update");
     }
 
-    fn on_detach(&self) {
-        println!("DebugOverlay detached");
-    }
-
-    fn on_update(&self) {
-        println!("DebugOverlay update");
-    }
-
-    fn on_event(&self, event: &Box<dyn Event>) -> bool {
-        println!("DebugOverlay event: {:?}", event.get_event_type());
+    fn handle_event(&self, event: &Box<dyn Event>) -> bool {
+        debug!("DebugOverlay event: {:?}", event.get_event_type());
         false
     }
 

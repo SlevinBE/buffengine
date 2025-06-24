@@ -43,7 +43,10 @@ impl <'window> WgpuRenderer<'window> {
 
     fn render_object(&self, renderable: &Renderable, render_pass: &mut RenderPass) {
         let shader_module = self.create_shader(&renderable.material.shader);
-        let pipeline = self.create_pipeline(shader_module);
+        let pipeline = self.create_pipeline(
+            format!("{:?}-pipeline", renderable.name).as_str(), 
+            shader_module
+        );
         let vertex_buffer = self.create_vertex_buffer(&renderable.mesh);
         render_pass.set_pipeline(&pipeline);
         render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
@@ -57,10 +60,10 @@ impl <'window> WgpuRenderer<'window> {
         })
     }
     
-    fn create_pipeline(&self, shader_module: ShaderModule) -> RenderPipeline {
+    fn create_pipeline(&self, pipeline_name: &str, shader_module: ShaderModule) -> RenderPipeline {
         let preferred_format: TextureFormat = self.infra.surface.get_capabilities(&self.infra.adapter).formats[0];
         self.infra.device.create_render_pipeline(&RenderPipelineDescriptor {
-            label: Some("Pipeline"),
+            label: Some(pipeline_name),
             layout: None,
             vertex: VertexState {
                 module: &shader_module,
@@ -99,7 +102,7 @@ impl <'window> WgpuRenderer<'window> {
 
     fn create_vertex_buffer(&self, mesh: &Mesh) -> Buffer {
         self.infra.device.create_buffer_init(&BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
+            label: Some(format!("{:?}-vertex-buffer", mesh.name).as_str()),
             contents: cast_slice(mesh.vertices.as_slice()),
             usage: BufferUsages::VERTEX
         })

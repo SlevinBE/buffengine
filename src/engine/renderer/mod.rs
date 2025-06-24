@@ -8,11 +8,13 @@ pub trait Renderer {
 }
 
 pub struct Renderable {
+    pub name: String,
     pub mesh: Mesh,
     pub material: Material
 }
 
 pub struct Mesh {
+    pub name: String,
     pub vertices: Vec<Vertex>
 }
 

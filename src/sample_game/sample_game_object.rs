@@ -8,8 +8,8 @@ pub struct SampleGameObject {
 impl SampleGameObject {
     pub fn new() -> Self {
         let shader_definition = ShaderDefinition {
-            name: "Triangle Shader".to_string(),
-            source: include_str!("shaders/colored_shape.wgsl").to_string()
+            name: String::from("Triangle Shader"),
+            source: String::from(include_str!("shaders/colored_shape.wgsl"))
         };
         
         let material = Material {
@@ -17,6 +17,7 @@ impl SampleGameObject {
         };
         
         let mesh = Mesh {
+            name: String::from("Triangle"),
             vertices: vec!(
                 Vertex {
                     position: [0.0, 0.5, 0.0],
@@ -32,6 +33,7 @@ impl SampleGameObject {
         };
         
         let renderable = Renderable {
+            name: String::from("Triangle"),
             mesh,
             material
         };

@@ -1,13 +1,4 @@
 use crate::engine::events::Event;
-use std::sync::mpsc::Receiver;
-
-pub trait Window {
-    fn update(&mut self);
-    
-    fn get_window_props(&self) -> &WindowProps;
-    
-    fn events(&self) -> &Receiver<Box<dyn Event>>;
-}
 
 pub struct WindowProps {
     pub title: String,

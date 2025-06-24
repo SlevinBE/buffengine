@@ -1,6 +1,6 @@
 use crate::engine::core::layer::Layer;
 use crate::engine::core::layerstack::LayerStack;
-use crate::engine::core::window::{Window, WindowProps};
+use crate::engine::core::window::{WindowProps};
 use crate::engine::events::{Event, EventType};
 use log::info;
 use std::cell::{Cell, Ref, RefCell};
@@ -70,12 +70,12 @@ impl <'app> Application<'app> {
             let mut event_handled = false;
             for overlay in self.layerstack.overlays().rev() {
                 if !event_handled {
-                    event_handled = overlay.on_event(&event)
+                    event_handled = overlay.handle_event(&event)
                 }
             }
             for layers in self.layerstack.layers().rev() {
                 if !event_handled {
-                    event_handled = layers.on_event(&event)
+                    event_handled = layers.handle_event(&event)
                 }
             }
         }
@@ -83,10 +83,10 @@ impl <'app> Application<'app> {
 
     fn update_layers(&mut self) {
         for layer in self.layerstack.layers() {
-            layer.on_update()
+            layer.update()
         }
         for overlay in self.layerstack.overlays() {
-            overlay.on_update()
+            overlay.update()
         }
     }
 

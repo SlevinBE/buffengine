@@ -3,10 +3,7 @@ use crate::engine::events::Event;
 use crate::engine::gameobjects::GameObject;
 
 pub trait Layer {
-    fn on_attach(&self);
-    fn on_detach(&self);
-    fn on_update(&self);
-
+    fn update(&self);
 
     /// Called when an event is triggered.
     ///
@@ -17,7 +14,8 @@ pub trait Layer {
     /// # Returns
     ///
     /// * `bool` - Whether the event was handled.
-    fn on_event(&self, event: &Box<dyn Event>) -> bool;
+    fn handle_event(&self, event: &Box<dyn Event>) -> bool;
+    
     fn get_name(&self) -> &str;
     
     fn as_scene(&self) -> Option<&dyn Scene> {

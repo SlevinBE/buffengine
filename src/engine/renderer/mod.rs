@@ -21,7 +21,8 @@ pub struct Mesh {
 #[repr(C)]  // Guarantees consistent memory layout across platforms
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
-    pub position: [f32; 3]
+    pub position: [f32; 3],
+    pub color: [f32; 4]
 }
 
 pub struct Material {

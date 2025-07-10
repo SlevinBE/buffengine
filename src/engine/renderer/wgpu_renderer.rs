@@ -1,7 +1,8 @@
 use crate::engine::renderer::{Mesh, Renderable, RenderedObject, Renderer, ShaderDefinition, Vertex, WgpuInfraPipeline};
 use std::iter::once;
+use std::mem::offset_of;
 use bytemuck::cast_slice;
-use wgpu::{Buffer, BufferUsages, ColorTargetState, FragmentState, InstanceDescriptor, RenderPass, RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderModuleDescriptor, ShaderSource, TextureFormat, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode};
+use wgpu::{Buffer, BufferAddress, BufferUsages, ColorTargetState, FragmentState, InstanceDescriptor, RenderPass, RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderModuleDescriptor, ShaderSource, TextureFormat, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode};
 use wgpu::StoreOp::Store;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::window::Window;
@@ -70,13 +71,18 @@ impl <'window> WgpuRenderer<'window> {
                 entry_point: None,
                 compilation_options: Default::default(),
                 buffers: &[VertexBufferLayout {
-                    array_stride: size_of::<Vertex>() as wgpu::BufferAddress,
+                    array_stride: size_of::<Vertex>() as BufferAddress,
                     step_mode: VertexStepMode::Vertex,
                     attributes: &[
                         VertexAttribute {
                             shader_location: 0, // position
                             format: VertexFormat::Float32x3,
                             offset: 0,
+                        },
+                        VertexAttribute {
+                            shader_location: 1, // position
+                            format: VertexFormat::Float32x4,
+                            offset: offset_of!(Vertex, color) as BufferAddress,
                         }
                     ]
                 }

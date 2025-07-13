@@ -42,9 +42,3 @@ pub struct WgpuInfraPipeline<'window> {
     device: wgpu::Device,
     queue: wgpu::Queue,
 }
-
-pub trait RenderedObject {
-    fn create_render_pipeline(&self, infra: &WgpuInfraPipeline) -> RenderPipeline;
-
-    fn vertices(&self) -> Range<u32>;
-}

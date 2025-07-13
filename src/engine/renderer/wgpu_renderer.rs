@@ -1,4 +1,4 @@
-use crate::engine::renderer::{Mesh, Renderable, RenderedObject, Renderer, ShaderDefinition, Vertex, WgpuInfraPipeline};
+use crate::engine::renderer::{Mesh, Renderable, Renderer, ShaderDefinition, Vertex, WgpuInfraPipeline};
 use std::iter::once;
 use std::mem::offset_of;
 use bytemuck::cast_slice;

@@ -91,7 +91,7 @@ impl <'app> Application<'app> {
     }
 
     fn run_renderer(&mut self) {
-        if let Some(renderer) = &self.renderer {
+        if let Some(renderer) = &mut self.renderer {
             for layer in self.layerstack.layers() {
                 if let Some(scene) = layer.as_scene() {
                     Self::render_scene(renderer, scene);
@@ -105,7 +105,7 @@ impl <'app> Application<'app> {
         }
     }
 
-    fn render_scene(renderer: &WgpuRenderer, scene: &dyn Scene) {
+    fn render_scene(renderer: &mut WgpuRenderer, scene: &dyn Scene) {
         let renderables = scene.get_game_objects().iter().map(|go| {
             go.get_renderable()
         }).collect::<Vec<_>>();

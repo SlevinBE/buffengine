@@ -1,5 +1,8 @@
 use crate::engine::gameobjects::GameObject;
-use crate::engine::renderer::{shaders, Material, Mesh, Renderable, ShaderDefinition, Texture, Vertex};
+use crate::engine::renderer::{shaders, Renderable};
+use crate::engine::renderer::material::Material;
+use crate::engine::renderer::mesh::{Mesh, Vertex};
+use crate::engine::renderer::transform::Transform2D;
 use crate::sample_game::resource_loader::load_texture_from_file;
 
 pub struct SampleGameObject {
@@ -7,7 +10,11 @@ pub struct SampleGameObject {
 }
 
 impl SampleGameObject {
-    pub fn new() -> Self {
+    /// # Parameters
+    /// * `x` - position on the x-axis in world units
+    /// * `y` - position on the y-axis in world units
+    /// * `scale` - the scale in world units
+    pub fn new(x: f32, y: f32, scale: f32) -> Self {
         let material = Material {
             shader: &shaders::SPRITE_SHADER,
             texture: Some(load_texture_from_file("src/sample_game/resources/warrior_idle.png", String::from("Warrior")).unwrap())
@@ -60,7 +67,11 @@ impl SampleGameObject {
         let renderable = Renderable {
             name: String::from("Sprite"),
             mesh,
-            material
+            material,
+            transform: Transform2D {
+                position: [x, y],
+                scale: [1.0 * scale, 1.0 * scale]
+            }
         };
         
         Self {

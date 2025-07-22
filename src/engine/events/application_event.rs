@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::engine::events::EventType::{WindowClose, WindowResize};
 use crate::engine::events::{Event, EventCategory, EventType};
 
@@ -14,6 +15,10 @@ impl Event for WindowResizeEvent {
 
     fn get_category_flags(&self) -> EventCategory {
         EventCategory::Application
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 
     fn to_string(&self) -> String {
@@ -34,6 +39,10 @@ impl Event for WindowCloseEvent {
         EventCategory::Application
     }
 
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
 }
 
 pub struct AppTickEvent;
@@ -47,6 +56,10 @@ impl Event for AppTickEvent {
 
     fn get_category_flags(&self) -> EventCategory {
         EventCategory::Application
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 
@@ -62,6 +75,10 @@ impl Event for AppUpdateEvent {
     fn get_category_flags(&self) -> EventCategory {
         EventCategory::Application
     }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 pub struct AppRenderEvent;
@@ -75,5 +92,9 @@ impl Event for AppRenderEvent {
 
     fn get_category_flags(&self) -> EventCategory {
         EventCategory::Application
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }

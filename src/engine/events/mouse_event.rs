@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::engine::core::mouse_codes::MouseCode;
 use crate::engine::events::EventType::{MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled};
 use crate::engine::events::{Event, EventCategory, EventType};
@@ -16,6 +17,10 @@ impl Event for MouseMovedEvent {
 
     fn get_category_flags(&self) -> EventCategory {
         EventCategory::Mouse | EventCategory::Input
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 
     fn to_string(&self) -> String {
@@ -39,6 +44,10 @@ impl Event for MouseScrolledEvent {
 
     fn get_category_flags(&self) -> EventCategory {
         EventCategory::Mouse | EventCategory::Input
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 
     fn to_string(&self) -> String {
@@ -70,6 +79,10 @@ impl Event for MouseButtonPressedEvent {
         EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton
     }
 
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
     fn to_string(&self) -> String {
         format!("MouseButtonPressedEvent: {:?}", &self.button)
     }
@@ -96,6 +109,10 @@ impl Event for MouseButtonReleasedEvent {
 
     fn get_category_flags(&self) -> EventCategory {
         EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 
     fn to_string(&self) -> String {

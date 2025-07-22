@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::engine::core::key_codes::KeyCode;
 use crate::engine::events::{Event, EventCategory, EventType};
 
@@ -27,6 +28,9 @@ impl Event for KeyPressedEvent {
     fn get_category_flags(&self) -> EventCategory {
         EventCategory::Keyboard | EventCategory::Input
     }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
     fn to_string(&self) -> String {
         format!("KeyPressedEvent: {:?}, {}", self.key_code, self.is_repeat)
     }
@@ -50,6 +54,9 @@ impl Event for KeyReleasedEvent {
     fn get_category_flags(&self) -> EventCategory {
         EventCategory::Keyboard | EventCategory::Input
     }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
     fn to_string(&self) -> String {format!("KeyReleasedEvent: {:?}", self.key_code)}
 }
 
@@ -70,6 +77,9 @@ impl Event for KeyTypedEvent {
     fn get_name(&self) -> &str { "KeyTyped" }
     fn get_category_flags(&self) -> EventCategory {
         EventCategory::Keyboard | EventCategory::Input
+    }
+    fn as_any(&self) -> &dyn Any {
+        self
     }
     fn to_string(&self) -> String { format!("KeyTypedEvent: {:?}", self.key_code) }
 }

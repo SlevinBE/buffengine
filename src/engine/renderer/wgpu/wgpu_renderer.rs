@@ -1,18 +1,33 @@
 use std::collections::HashMap;
-use crate::engine::renderer::{Mesh, Renderable, Renderer, ShaderDefinition, Texture, Vertex, WgpuInfraPipeline};
+use crate::engine::renderer::{Renderable, Renderer, Scene};
 use std::iter::once;
 use std::mem::offset_of;
+use std::ops::Deref;
 use bytemuck::cast_slice;
-use wgpu::{Buffer, BufferAddress, BufferUsages, ColorTargetState, FragmentState, InstanceDescriptor, RenderPass, RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderModuleDescriptor, ShaderSource, TextureFormat, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode};
+use glam::{Mat4, Vec4};
+use wgpu::{BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, Buffer, BufferAddress, BufferBindingType, BufferDescriptor, BufferUsages, ColorTargetState, FragmentState, InstanceDescriptor, Label, RenderPass, RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderModuleDescriptor, ShaderSource, ShaderStages, TextureFormat, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode};
+use wgpu::core::pipeline::ImplicitLayoutError::BindGroup;
 use wgpu::StoreOp::Store;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use winit::window::Window;
-use crate::engine::renderer::wgpu_texture::WgpuTexture;
+use crate::engine::renderer::camera::Camera2D;
+use crate::engine::renderer::material::{ShaderDefinition, Texture};
+use crate::engine::renderer::mesh::{Mesh, Vertex};
+use crate::engine::renderer::shaders::SpriteUniforms;
+use crate::engine::renderer::wgpu::wgpu_texture::WgpuTexture;
 
 pub struct WgpuRenderer<'window> {
     infra: WgpuInfraPipeline<'window>,
     texture_cache: HashMap<String, WgpuTexture>,
-    texture_bind_group_layout: wgpu::BindGroupLayout,   
+    texture_bind_group_layout: wgpu::BindGroupLayout,  
+    uniform_bind_group_layout: wgpu::BindGroupLayout, 
+}
+
+pub struct WgpuInfraPipeline<'window> {
+    surface: wgpu::Surface<'window>,
+    adapter: wgpu::Adapter,
+    device: wgpu::Device,
+    queue: wgpu::Queue,
 }
 
 impl <'window> WgpuRenderer<'window> {
@@ -34,25 +49,27 @@ impl <'window> WgpuRenderer<'window> {
         if let Some(config) = surface.get_default_config(&adapter, size.width, size.height) {
             surface.configure(&device, &config);
         }
-        
+
         let texture_bind_group_layout = WgpuRenderer::create_texture_bind_group_layout(&device);
+        let uniform_bind_group_layout = WgpuRenderer::create_uniform_bind_group_layout(&device);
 
         WgpuRenderer {
             infra: WgpuInfraPipeline {
                 surface,
                 adapter,
                 device,
-                queue,
+                queue
             },
             texture_cache: HashMap::new(),
-            texture_bind_group_layout
+            texture_bind_group_layout,
+            uniform_bind_group_layout
         }
     }
 
-    fn render_object(&mut self, renderable: &Renderable, render_pass: &mut RenderPass) {
+    fn render_object(&mut self, renderable: &Renderable, camera: &Camera2D, render_pass: &mut RenderPass) {
         let shader_module = self.create_shader(&renderable.material.shader);
         let pipeline = self.create_pipeline(
-            format!("{:?}-pipeline", renderable.name).as_str(), 
+            format!("{:?}-pipeline", renderable.name).as_str(),
             shader_module
         );
         let vertex_buffer = self.create_vertex_buffer(&renderable.mesh);
@@ -65,22 +82,26 @@ impl <'window> WgpuRenderer<'window> {
             render_pass.set_bind_group(0, &wgpu_texture.bind_group, &[]);
         }
 
+        let uniforms = SpriteUniforms::new(renderable, camera);
+        let uniform_bind_group = self.create_uniform_bind_group(uniforms);
+        render_pass.set_bind_group(1, &uniform_bind_group, &[]);
+
         render_pass.draw(0..renderable.mesh.vertices.len() as u32, 0..1);
     }
-    
+
     fn create_shader(&self, shader_definition: &ShaderDefinition) -> ShaderModule {
         self.infra.device.create_shader_module(ShaderModuleDescriptor {
             label: Some(shader_definition.name.as_str()),
             source: ShaderSource::Wgsl(shader_definition.source.clone().into()),
         })
     }
-    
+
     fn create_pipeline(&self, pipeline_name: &str, shader_module: ShaderModule) -> RenderPipeline {
         let preferred_format: TextureFormat = self.infra.surface.get_capabilities(&self.infra.adapter).formats[0];
 
         let pipeline_layout = self.infra.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[&self.texture_bind_group_layout],
+            bind_group_layouts: &[&self.texture_bind_group_layout, &self.uniform_bind_group_layout],
             push_constant_ranges: &[]
         });
 
@@ -108,7 +129,7 @@ impl <'window> WgpuRenderer<'window> {
                         VertexAttribute {
                             shader_location: 2, // tex_coords
                             format: VertexFormat::Float32x2,
-                            offset: offset_of!(Vertex, tex_coords) as BufferAddress,       
+                            offset: offset_of!(Vertex, tex_coords) as BufferAddress,
                         }
                     ]
                 }
@@ -139,7 +160,7 @@ impl <'window> WgpuRenderer<'window> {
             usage: BufferUsages::VERTEX
         })
     }
-    
+
     fn create_texture_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[
@@ -161,7 +182,7 @@ impl <'window> WgpuRenderer<'window> {
                 },
             ],
             label: Some("texture_bind_group_layout"),
-            })
+        })
     }
 
     fn get_or_create_texture(&mut self, abstract_texture: &Texture) -> &WgpuTexture {
@@ -177,11 +198,46 @@ impl <'window> WgpuRenderer<'window> {
         self.texture_cache.get(&abstract_texture.name).unwrap()
     }
 
+    fn create_uniform_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+        device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("uniform_bind_group_layout"),
+            entries: &[
+                BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None
+                    },
+                    count: None
+                }
+            ],
+        })
+    }
+
+    fn create_uniform_bind_group(&self, uniforms: SpriteUniforms) -> wgpu::BindGroup {
+        let uniform_buffer = self.infra.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("uniform_buffer"),
+            contents: bytemuck::cast_slice(&[uniforms]),
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+        });
+
+        self.infra.device.create_bind_group(&BindGroupDescriptor {
+            label: Some("uniform_bind_group"),
+            layout: &self.uniform_bind_group_layout,
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: uniform_buffer.as_entire_binding()
+                }
+            ]
+        })
+    }
 }
 
-impl <'window> Renderer for WgpuRenderer<'window> {
-    
-    fn render(&mut self, renderables: Vec<&Renderable>) {
+impl<'window> Renderer for WgpuRenderer<'window> {
+    fn render(&mut self, scene: &dyn Scene) {
         let frame = self.infra.surface
             .get_current_texture()
             .expect("Failed to acquire next swap chain texture");
@@ -216,11 +272,11 @@ impl <'window> Renderer for WgpuRenderer<'window> {
         {
             let mut render_pass = encoder.begin_render_pass(&render_pass_desc);
             
-            for renderable in renderables {
+            for renderable in scene.get_renderables() {
                 // TODO: this might be problematic, as we draw multiple times before submitting the command buffer.
                 // so it might only draw the last renderable we added to the command buffer.
                 // see https://webgpufundamentals.org/webgpu/lessons/webgpu-uniforms.html
-                self.render_object(renderable, &mut render_pass);    
+                self.render_object(renderable, scene.get_camera().deref(), &mut render_pass);    
             }
         }
 

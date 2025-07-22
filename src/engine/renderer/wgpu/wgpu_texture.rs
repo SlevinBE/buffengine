@@ -1,4 +1,4 @@
-use crate::engine::renderer::Texture;
+use crate::engine::renderer::material::Texture;
 
 pub struct WgpuTexture {
     pub texture: wgpu::Texture,

@@ -1,6 +1,6 @@
-use crate::engine::core::scene::Scene;
 use crate::engine::events::Event;
 use crate::engine::gameobjects::GameObject;
+use crate::engine::renderer::Scene;
 
 pub trait Layer {
     fn update(&self);

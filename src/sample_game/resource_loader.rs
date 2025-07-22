@@ -1,4 +1,4 @@
-use crate::engine::renderer::Texture;
+use crate::engine::renderer::material::Texture;
 
 pub fn load_texture_from_file(path: &str, name: String) -> Result<Texture, Box<dyn std::error::Error>> {
     let img = image::open(path)?;

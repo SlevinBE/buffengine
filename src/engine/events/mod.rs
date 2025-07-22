@@ -1,3 +1,4 @@
+use std::any::Any;
 use bitmask_enum::bitmask;
 
 pub mod event_handling;
@@ -7,7 +8,7 @@ pub mod key_event;
 pub mod winit_event_mapper;
 pub mod winit_input_mapper;
 
-pub trait Event {
+pub trait Event: Any {
     fn get_event_type(&self) -> EventType;
 
     fn get_name(&self) -> &str;
@@ -17,6 +18,8 @@ pub trait Event {
     fn is_in_category(&self, category: EventCategory) -> bool {
         self.get_category_flags().contains(category)
     }
+    
+    fn as_any(&self) -> &dyn Any;
 
     fn to_string(&self) -> String {
         self.get_name().to_string()

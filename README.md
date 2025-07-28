@@ -8,7 +8,7 @@ While a quite simple 2D game engine, it has the following features:
   - local space (meshes, -0.5 to 0.5)
   - world space (game objects, any units or range)
   - view space (camera, same units as world space)
-  - clip space (screen)
+  - clip space (screen, -1 to 1)
 - event system
 - layer system
 - scene and renderables

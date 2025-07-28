@@ -34,3 +34,63 @@ impl Camera2D {
         Mat4::orthographic_lh(left, right, bottom, top, near, far)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use glam::{Mat4, Vec4};
+    use crate::engine::renderer::camera::Camera2D;
+
+    #[test]
+    fn camera2d_should_translate_world_coordinates_to_view_space() {
+        // given
+        let camera = Camera2D {
+            position: [8.0, 8.0],
+            size: [10.0, 10.0],
+            viewport_size: [10, 10]
+        };
+        let world_position = Vec4::new(10.0, 10.0, 0.0, 1.0);
+        
+        // when
+        let world_to_view_matrix: Mat4 = camera.world_to_view_matrix();
+        let view_position: Vec4 = world_to_view_matrix * world_position;
+        
+        // then: position has shifted 8 positions across the x/y-axis to the lower/bottom left of the camera
+        assert_eq!(view_position, Vec4::new(2.0, 2.0, 0.0, 1.0));
+    }
+    
+    #[test]
+    fn camera2d_should_translate_view_coordinates_to_clip_space_when_position_inside_camera_bounds() {
+        // given
+        let camera = Camera2D {
+            position: [0.0, 0.0],
+            size: [10.0, 10.0],
+            viewport_size: [10, 10] // the same as size to keep a 1:1 aspect ratio
+        };
+        let view_position = Vec4::new(5.0, 5.0, 0.0, 1.0);
+        
+        // when
+        let view_to_clip_matrix = camera.view_to_clip_matrix();
+        let clip_position = view_to_clip_matrix * view_position;
+        
+        // then
+        assert_eq!(clip_position, Vec4::new(0.0, 0.0, 0.0, 1.0));
+    }
+
+    #[test]
+    fn camera2d_should_translate_view_coordinates_to_clip_space_when_position_outside_camera_bounds() {
+        // given
+        let camera = Camera2D {
+            position: [0.0, 0.0],
+            size: [10.0, 10.0],
+            viewport_size: [10, 10] // the same as size to keep a 1:1 aspect ratio
+        };
+        let view_position = Vec4::new(15.0, 15.0, 0.0, 1.0);
+
+        // when
+        let view_to_clip_matrix = camera.view_to_clip_matrix();
+        let clip_position = view_to_clip_matrix * view_position;
+
+        // then
+        assert_eq!(clip_position, Vec4::new(2.0, 2.0, 0.0, 1.0));
+    }
+}

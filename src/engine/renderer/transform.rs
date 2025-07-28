@@ -18,3 +18,32 @@ impl Transform2D {
         position_transform * scale_transform * local_to_world_local
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use glam::Vec4;
+    use crate::engine::renderer::transform::Transform2D;
+
+    #[test]
+    fn transform2d_should_translate_local_coordinates_to_world_space() {
+        // given
+        let transform = Transform2D {
+            position: [100.0, 100.0],
+            scale: [2.0, 2.0]
+        };
+        let world_space_matrix = transform.local_to_world_model_matrix();
+        
+        // when: lower left corner in local space
+        let local_space = Vec4::new(-0.5, -0.5, 0.0, 1.0);
+        let world_space = world_space_matrix * local_space;
+        // then
+        assert_eq!(world_space, Vec4::new(100.0, 100.0, 0.0, 1.0));
+        
+        
+        // when: center in local space
+        let local_space = Vec4::new(0.0, 0.0, 0.0, 1.0);
+        let world_space = world_space_matrix * local_space;
+        // then
+        assert_eq!(world_space, Vec4::new(101.0, 101.0, 0.0, 1.0));
+    }
+}

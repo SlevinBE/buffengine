@@ -14,7 +14,7 @@ pub trait Layer {
     /// # Returns
     ///
     /// * `bool` - Whether the event was handled.
-    fn handle_event(&self, event: &Box<dyn Event>) -> bool;
+    fn handle_event(&self, event: &Event) -> bool;
     
     fn get_name(&self) -> &str;
     

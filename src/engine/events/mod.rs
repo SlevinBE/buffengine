@@ -1,45 +1,55 @@
 use std::any::Any;
 use bitmask_enum::bitmask;
+use crate::engine::core::key_codes::KeyCode;
+use crate::engine::core::mouse_codes::MouseCode;
 
 pub mod event_handling;
-pub mod mouse_event;
-pub mod application_event;
-pub mod key_event;
 pub mod winit_event_mapper;
 pub mod winit_input_mapper;
 
-pub trait Event: Any {
-    fn get_event_type(&self) -> EventType;
-
-    fn get_name(&self) -> &str;
-
-    fn get_category_flags(&self) -> EventCategory;
-
-    fn is_in_category(&self, category: EventCategory) -> bool {
-        self.get_category_flags().contains(category)
-    }
-    
-    fn as_any(&self) -> &dyn Any;
-
-    fn to_string(&self) -> String {
-        self.get_name().to_string()
-    }
-
+#[derive(Debug)]
+pub enum Event {
+    ApplicationEvent(ApplicationEvent),
+    MouseEvent(MouseEvent),
+    KeyboardEvent(KeyboardEvent),
+    UserEvent(Box<dyn Any>)
 }
 
-#[derive(Hash, PartialEq, Eq, Debug)]
-pub enum EventType {
-    WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
-    AppTick, AppUpdate, AppRender,
-    KeyPressed, KeyReleased, KeyTyped,
-    MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled
+#[derive(Debug)]
+pub enum ApplicationEvent {
+    WindowClosed, 
+    WindowResized {
+        width: u32,
+        height: u32
+    }, 
+    RenderRequested
 }
 
-#[bitmask(u8)]
-pub enum EventCategory {
-    Application,
-    Input,
-    Keyboard,
-    Mouse,
-    MouseButton,
+#[derive(Debug)]
+pub enum MouseEvent {
+    MouseButtonPressed{
+        button: MouseCode
+    }, 
+    MouseButtonReleased {
+        button: MouseCode
+    }, 
+    MouseMoved {
+        x: f64,
+        y: f64   
+    }, 
+    MouseScrolled {
+        x_offset: f64,
+        y_offset: f64
+    }
+}
+
+#[derive(Debug)]
+pub enum KeyboardEvent {
+    KeyPressed {
+        key_code: KeyCode,
+        is_repeat: bool
+    }, 
+    KeyReleased {
+        key_code: KeyCode
+    }
 }

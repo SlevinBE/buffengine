@@ -11,8 +11,8 @@ impl Layer for DebugOverlay {
         debug!("DebugOverlay update");
     }
 
-    fn handle_event(&self, event: &Box<dyn Event>) -> bool {
-        debug!("DebugOverlay event: {:?}", event.get_event_type());
+    fn handle_event(&self, event: &Event) -> bool {
+        debug!("DebugOverlay event: {:?}", event);
         false
     }
 

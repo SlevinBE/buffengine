@@ -1,14 +1,14 @@
 use crate::engine::events::Event;
 
-trait EventHandler<T: Event> {
-    fn handle(&self, event: &T);
+trait EventHandler {
+    fn handle(&self, event: &Event);
 }
 
-struct EventDispatcher<'a, U: Event> {
-    handlers: Vec<&'a dyn EventHandler<U>>
+struct EventDispatcher<'a> {
+    handlers: Vec<&'a dyn EventHandler>
 }
 
-impl<'a, U: Event> EventDispatcher<'a, U> {
+impl<'a> EventDispatcher<'a> {
 
     pub fn new() -> Self {
         Self {
@@ -16,11 +16,11 @@ impl<'a, U: Event> EventDispatcher<'a, U> {
         }
     }
 
-    pub fn add_event_handler(&mut self, handler: &'a dyn EventHandler<U>) {
+    pub fn add_event_handler(&mut self, handler: &'a dyn EventHandler) {
         self.handlers.push(handler);
     }
 
-    pub fn dispatch(&self, event: &U) {
+    pub fn dispatch(&self, event: &Event) {
         for handler in &self.handlers {
             handler.handle(event)
         }
@@ -32,14 +32,14 @@ mod tests {
     use super::*;
     use crate::engine::core::mouse_codes::MouseCode;
     use crate::engine::events::event_handling::EventDispatcher;
-    use crate::engine::events::mouse_event::MouseButtonReleasedEvent;
     use std::cell::Cell;
+    use crate::engine::events::MouseEvent::MouseButtonPressed;
 
     #[test]
     fn event_dispatcher_should_dispatch_event_to_registered_handlers() {
         // given
-        let mut event_dispatcher = EventDispatcher::<MouseButtonReleasedEvent>::new();
-        let event = MouseButtonReleasedEvent{ button: MouseCode::ButtonLeft };
+        let mut event_dispatcher = EventDispatcher::new();
+        let event = Event::MouseEvent(MouseButtonPressed { button: MouseCode::ButtonLeft });
         let event_handler = EventHandlerStub::new();
         event_dispatcher.add_event_handler(&event_handler);
 
@@ -66,8 +66,8 @@ mod tests {
         }
     }
 
-    impl<T: Event> EventHandler<T> for EventHandlerStub {
-        fn handle(&self, _event: &T) {
+    impl EventHandler for EventHandlerStub {
+        fn handle(&self, _event: &Event) {
             self.called.set(true);
         }
     }

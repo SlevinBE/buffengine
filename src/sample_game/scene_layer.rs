@@ -2,9 +2,8 @@ use std::any::Any;
 use std::cell::{Ref, RefCell};
 use log::debug;
 use crate::engine::core::layer::Layer;
-use crate::engine::events::{Event, EventType};
-use crate::engine::events::application_event::WindowResizeEvent;
-use crate::engine::events::EventType::WindowResize;
+use crate::engine::events::{ApplicationEvent, Event};
+use crate::engine::events::ApplicationEvent::WindowResized;
 use crate::engine::gameobjects::GameObject;
 use crate::engine::renderer::{Renderable, Scene};
 use crate::engine::renderer::camera::Camera2D;
@@ -40,17 +39,13 @@ impl Layer for SceneLayer {
         debug!("SampleLayer update");
     }
 
-    fn handle_event(&self, event: &Box<dyn Event>) -> bool {
-        debug!("SampleLayer event: {:?}", event.get_event_type());
-        match event.get_event_type() {
-            WindowResize => {
-                let event = event.as_any().downcast_ref::<WindowResizeEvent>().unwrap();
-                self.camera.borrow_mut().update_viewport_size([event.width, event.height])
-            },
-            _ => { // ignore 
-            }
+    fn handle_event(&self, event: &Event) -> bool {
+        debug!("SampleLayer event: {:?}", event);
+        if let Event::ApplicationEvent(WindowResized { width, height}) = event {
+            self.camera.borrow_mut().update_viewport_size([*width, *height]);
+            return true
         }
-        true
+        false
     }
 
     fn get_name(&self) -> &str {

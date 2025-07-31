@@ -2,19 +2,19 @@ use log::debug;
 use winit::event::{ElementState, WindowEvent};
 use winit::event::MouseScrollDelta::{LineDelta, PixelDelta};
 use winit::keyboard::PhysicalKey::{Code, Unidentified};
-use crate::engine::events::application_event::{AppRenderEvent, WindowResizeEvent};
-use crate::engine::events::Event;
-use crate::engine::events::key_event::{KeyPressedEvent, KeyReleasedEvent};
-use crate::engine::events::mouse_event::{MouseButtonPressedEvent, MouseButtonReleasedEvent, MouseMovedEvent, MouseScrolledEvent};
+use crate::engine::events::ApplicationEvent::{RenderRequested, WindowClosed, WindowResized};
+use crate::engine::events::{ApplicationEvent, Event};
+use crate::engine::events::KeyboardEvent::{KeyPressed, KeyReleased};
+use crate::engine::events::MouseEvent::{MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled};
 use crate::engine::events::winit_input_mapper::WinitKeyCode;
 
-pub fn map_event(event: WindowEvent) -> Option<Box<dyn Event>> {
+pub fn map_event(event: WindowEvent) -> Option<Event> {
     match event {
         WindowEvent::CloseRequested => {
-            Some(Box::new(crate::engine::events::application_event::WindowCloseEvent {}))
+            Some(Event::ApplicationEvent(WindowClosed))
         },
         WindowEvent::Resized(physical_size) => {
-            Some(Box::new(WindowResizeEvent {
+            Some(Event::ApplicationEvent(WindowResized {
                 width: physical_size.width,
                 height: physical_size.height
             }))
@@ -34,13 +34,13 @@ pub fn map_event(event: WindowEvent) -> Option<Box<dyn Event>> {
                 Ok(key_code) => {
                     match event.state {
                         ElementState::Pressed => {
-                            Some(Box::new(KeyPressedEvent {
+                            Some(Event::KeyboardEvent(KeyPressed {
                                 key_code,
                                 is_repeat: event.repeat,
                             }))
                         }
                         ElementState::Released => {
-                            Some(Box::new(KeyReleasedEvent {
+                            Some(Event::KeyboardEvent(KeyReleased {
                                 key_code
                             }))
                         }
@@ -49,7 +49,7 @@ pub fn map_event(event: WindowEvent) -> Option<Box<dyn Event>> {
             }
         }
         WindowEvent::CursorMoved { device_id, position } => {
-            Some(Box::new(MouseMovedEvent {
+            Some(Event::MouseEvent(MouseMoved {
                 x: position.x,
                 y: position.y
             }))
@@ -57,8 +57,8 @@ pub fn map_event(event: WindowEvent) -> Option<Box<dyn Event>> {
         WindowEvent::MouseInput { device_id, state, button } => {
             button.try_into().map_or(None, |mouse_code|
                 match state {
-                    ElementState::Pressed => Some(Box::new(MouseButtonPressedEvent { button: mouse_code })),
-                    ElementState::Released => Some(Box::new(MouseButtonReleasedEvent { button: mouse_code })),
+                    ElementState::Pressed => Some(Event::MouseEvent(MouseButtonPressed { button: mouse_code })),
+                    ElementState::Released => Some(Event::MouseEvent(MouseButtonReleased { button: mouse_code })),
                     _ => None
                 }
             )
@@ -66,14 +66,14 @@ pub fn map_event(event: WindowEvent) -> Option<Box<dyn Event>> {
         WindowEvent::MouseWheel { device_id, delta, phase } => {
             match delta {
                 LineDelta(x, y) => None,
-                PixelDelta(position) => Some(Box::new(MouseScrolledEvent {
+                PixelDelta(position) => Some(Event::MouseEvent(MouseScrolled {
                     x_offset: position.x,
                     y_offset: position.y
                 }))
             }
         }
         WindowEvent::RedrawRequested => {
-            Some(Box::new(AppRenderEvent))
+            Some(Event::ApplicationEvent(RenderRequested))
         }
         (unknown_event) => {
             debug!("Unknown event {:?}", unknown_event);

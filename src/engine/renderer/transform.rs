@@ -1,5 +1,6 @@
 use glam::{Mat4, Vec3};
 
+#[derive(Debug, Clone)]
 pub struct Transform2D {
     pub position: [f32; 2],
     pub scale: [f32; 2]
@@ -16,6 +17,14 @@ impl Transform2D {
 
         // executed right to left
         position_transform * scale_transform * local_to_world_local
+    }
+
+    pub fn position_to(&self, x_offset: f32, y_offset: f32) -> Self {
+        let position = [x_offset, y_offset];
+        Self {
+            position,
+            ..*self
+        }
     }
 }
 

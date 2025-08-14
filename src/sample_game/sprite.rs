@@ -1,15 +1,15 @@
-use crate::engine::gameobjects::GameObject;
 use crate::engine::renderer::{shaders, Renderable};
 use crate::engine::renderer::material::Material;
 use crate::engine::renderer::mesh::{Mesh, Vertex};
 use crate::engine::renderer::transform::Transform2D;
 use crate::sample_game::resource_loader::load_texture_from_file;
 
-pub struct SampleGameObject {
+#[derive(Debug, Clone)]
+pub struct Sprite {
     renderable: Renderable
 }
 
-impl SampleGameObject {
+impl Sprite {
     /// # Parameters
     /// * `x` - position on the x-axis in world units
     /// * `y` - position on the y-axis in world units
@@ -78,10 +78,38 @@ impl SampleGameObject {
             renderable
         }
     }
-}
-impl GameObject for SampleGameObject {
-    
-    fn get_renderable(&self) -> &Renderable {
+
+    pub fn get_renderable(&self) -> &Renderable {
         &self.renderable
     }
+    
+    fn move_xy(&mut self, offset_x: f32, offset_y: f32) {
+        self.renderable.transform = self.renderable.transform.position_to(self.renderable.transform.position[0] + offset_x, self.renderable.transform.position[1] + offset_y);
+    }
+}
+impl Movable for Sprite {
+    
+    fn move_up(&mut self, offset: f32) {
+        self.move_xy(0.0, offset)
+    }
+
+    fn move_down(&mut self, offset: f32) {
+        self.move_xy(0.0, -offset)
+    }
+
+    fn move_left(&mut self, offset: f32) {
+        self.move_xy(-offset, 0.0)
+    }
+
+    fn move_right(&mut self, offset: f32) {
+        self.move_xy(offset, 0.0)
+    }
+    
+}
+
+pub trait Movable {
+    fn move_up(&mut self, offset: f32);
+    fn move_down(&mut self, offset: f32);
+    fn move_left(&mut self, offset: f32);
+    fn move_right(&mut self, offset: f32);
 }

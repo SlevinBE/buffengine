@@ -3,6 +3,8 @@ use crate::engine::renderer::{Renderable, Renderer, Scene};
 use std::iter::once;
 use std::mem::offset_of;
 use std::ops::Deref;
+use std::rc::Rc;
+use std::sync::Arc;
 use bytemuck::cast_slice;
 use glam::{Mat4, Vec4};
 use wgpu::{BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, Buffer, BufferAddress, BufferBindingType, BufferDescriptor, BufferUsages, ColorTargetState, FragmentState, InstanceDescriptor, Label, RenderPass, RenderPipeline, RenderPipelineDescriptor, ShaderModule, ShaderModuleDescriptor, ShaderSource, ShaderStages, TextureFormat, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode};
@@ -17,6 +19,7 @@ use crate::engine::renderer::shaders::SpriteUniforms;
 use crate::engine::renderer::wgpu::wgpu_texture::WgpuTexture;
 
 pub struct WgpuRenderer<'window> {
+    window: Arc<Window>,
     infra: WgpuInfraPipeline<'window>,
     texture_cache: HashMap<String, WgpuTexture>,
     texture_bind_group_layout: wgpu::BindGroupLayout,  
@@ -31,11 +34,12 @@ pub struct WgpuInfraPipeline<'window> {
 }
 
 impl <'window> WgpuRenderer<'window> {
-    pub fn new(window: Window) -> WgpuRenderer<'window> {
+    pub fn new(window: Arc<Window>) -> WgpuRenderer<'window> {
         let instance_descriptor = InstanceDescriptor::default();
         let instance = wgpu::Instance::new(&instance_descriptor);
         let size = window.inner_size();
-        let surface = unsafe { instance.create_surface(window).unwrap() };
+        let window_for_surface = Arc::clone(&window);
+        let surface = unsafe { instance.create_surface(window_for_surface).unwrap() };
         let adapter = pollster::block_on(
             instance.request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
@@ -62,7 +66,8 @@ impl <'window> WgpuRenderer<'window> {
             },
             texture_cache: HashMap::new(),
             texture_bind_group_layout,
-            uniform_bind_group_layout
+            uniform_bind_group_layout,
+            window: Arc::clone(&window)
         }
     }
 
@@ -276,7 +281,7 @@ impl<'window> Renderer for WgpuRenderer<'window> {
                 // TODO: this might be problematic, as we draw multiple times before submitting the command buffer.
                 // so it might only draw the last renderable we added to the command buffer.
                 // see https://webgpufundamentals.org/webgpu/lessons/webgpu-uniforms.html
-                self.render_object(renderable, scene.get_camera().deref(), &mut render_pass);    
+                self.render_object(&renderable, scene.get_camera().deref(), &mut render_pass);    
             }
         }
 

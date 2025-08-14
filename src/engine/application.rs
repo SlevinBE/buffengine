@@ -4,6 +4,10 @@ use crate::engine::core::window::{WindowProps};
 use crate::engine::events::{Event};
 use log::info;
 use std::cell::{Cell, Ref, RefCell};
+use std::ops::Deref;
+use std::rc::Rc;
+use std::borrow::Borrow;
+use std::sync::Arc;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use winit::application::ApplicationHandler;
 use winit::dpi::LogicalSize;
@@ -20,6 +24,7 @@ type WinitWindow = winit::window::Window;
 pub struct Application<'app> {
     layerstack: LayerStack,
     renderer: Option<WgpuRenderer<'app>>,
+    window: Option<Arc<WinitWindow>>,
     events_sender: Sender<Event>,
     events_receiver: Receiver<Event>,
     window_props: WindowProps
@@ -32,6 +37,7 @@ impl <'app> Application<'app> {
         Self {
             layerstack: LayerStack::new(),
             renderer: None,
+            window: None,
             events_sender,
             events_receiver,
             window_props
@@ -107,6 +113,9 @@ impl <'app> Application<'app> {
     fn on_app_render(&mut self) {
         self.update_layers();
         self.run_renderer();
+        if let Some(window) = self.window.as_ref() {
+            window.request_redraw();
+        }
     }
 
     fn on_window_closed(&self, event_loop: &ActiveEventLoop) {
@@ -122,8 +131,10 @@ impl <'app> ApplicationHandler for Application<'app> {
                 self.window_props.width, 
                 self.window_props.height
             ));
-        let window: WinitWindow = event_loop.create_window(window_attributes).unwrap();
-        self.renderer = Some(WgpuRenderer::new(window));
+        let window = event_loop.create_window(window_attributes).unwrap();
+        let window_rc = Arc::new(window);
+        self.renderer = Some(WgpuRenderer::new(Arc::clone(&window_rc)));
+        self.window = Some(window_rc);
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {

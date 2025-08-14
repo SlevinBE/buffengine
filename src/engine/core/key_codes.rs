@@ -1,5 +1,5 @@
 #[repr(i32)]
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum KeyCode {
     Space               = 32,
     Apostrophe          = 39, /* ' */

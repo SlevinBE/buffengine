@@ -1,5 +1,4 @@
 use crate::engine::events::Event;
-use crate::engine::gameobjects::GameObject;
 use crate::engine::renderer::Scene;
 
 pub trait Layer {
